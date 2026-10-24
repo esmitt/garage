@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Venta de Garage · Villa Urquiza</title>
+  <meta name="description" content="Venta de garage en Villa Urquiza: muebles, electrónica, cocina y más. Cosas nuevas, usadas y para regalar.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Venta de Garage · Villa Urquiza">
+  <meta property="og:description" content="Cosas nuevas, en excelente estado, usadas y para regalar. Retiro en Villa Urquiza (Olazábal y Lugones) y envíos.">
+  <!-- Para la vista previa en WhatsApp/Facebook: subí una foto como og.jpg y poné la URL completa acá -->
+  <!-- <meta property="og:image" content="https://TU_USUARIO.github.io/garage/og.jpg"> -->
+  <meta name="theme-color" content="#FBF6EE">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🏷️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Villa Urquiza · CABA</p>
+      <h1>Venta de <em>garage</em></h1>
+      <p class="lead">Cosas nuevas, en excelente estado, usadas y para regalar. Escribinos por WhatsApp o Instagram y coordinamos.</p>
+      <div class="chips">
+        <a class="chip" id="pickup-chip" target="_blank" rel="noopener">📍 <span></span></a>
+        <span class="chip">🚚 Envío en algunos artículos</span>
+        <span class="chip">💬 Respondemos rápido</span>
+      </div>
+      <div class="hero-actions">
+        <a class="btn btn-wa" id="hero-wa" target="_blank" rel="noopener">💬 WhatsApp</a>
+        <a class="btn btn-ig" id="hero-ig" target="_blank" rel="noopener">📸 Instagram</a>
+        <button class="btn btn-ghost" id="share-catalog" type="button">📣 Compartir con amigos</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="toolbar">
+      <input class="search" type="search" id="q" placeholder="Buscar: sillón, cafetera, bici…" aria-label="Buscar">
+      <div class="filters" id="filters" role="group" aria-label="Filtrar">
+        <button class="filter on" data-f="todo">Todo</button>
+        <button class="filter" data-f="nuevo">Nuevo</button>
+        <button class="filter" data-f="excelente">Excelente estado</button>
+        <button class="filter" data-f="usado">Usado</button>
+        <button class="filter" data-f="regalo">🎁 Gratis</button>
+        <button class="filter" data-f="envio">🚚 Con envío</button>
+      </div>
+      <div class="toolbar-row">
+        <label class="toggle"><input type="checkbox" id="show-sold"> Mostrar vendidos</label>
+        <select id="sort" aria-label="Ordenar">
+          <option value="nuevos">Más recientes</option>
+          <option value="barato">Menor precio</option>
+          <option value="caro">Mayor precio</option>
+        </select>
+        <span class="count" id="count"></span>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <p class="empty" id="empty" hidden>No encontramos nada con ese filtro 🙈</p>
+  </main>
+
+  <footer class="site-foot wrap">
+    <span class="hand">¡gracias por pasar!</span>
+    Retiro en <a id="foot-maps" target="_blank" rel="noopener"></a> · Coordinamos por WhatsApp o Instagram
+  </footer>
+
+  <dialog class="sheet" id="item-dialog" aria-label="Detalle del artículo"></dialog>
+
+  <script src="js/config.js"></script>
+  <script src="mock/products.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/share.js"></script>
+  <script src="js/public.js"></script>
+</body>
+</html>

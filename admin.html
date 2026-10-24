@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin · Venta de Garage</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#FBF6EE">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔑</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <section class="login" id="login-view" hidden>
+    <form class="login-card" id="login-form">
+      <p class="eyebrow">Venta de garage</p>
+      <h1>Hola de nuevo 👋</h1>
+      <p>Entrá para cargar y administrar los artículos.</p>
+      <label class="field">Usuario<input name="user" autocomplete="username" required></label>
+      <label class="field">Clave<input name="pass" type="password" autocomplete="current-password" required></label>
+      <p class="error" id="login-error"></p>
+      <button class="btn btn-primary btn-block" type="submit">Entrar</button>
+      <p class="demo-hint" id="mock-hint" hidden style="margin-top:16px">Modo demo: usuario <b>admin</b>, clave <b>garage</b>. Los cambios quedan solo en este navegador.</p>
+    </form>
+  </section>
+
+  <div id="app-view" hidden>
+    <header class="admin-bar">
+      <div class="wrap">
+        <h1>🏷️ Garage · Admin <span class="badge-demo" id="mode-badge" hidden>DEMO</span></h1>
+        <a class="btn btn-ghost" href="./" target="_blank">👀 Ver página</a>
+        <button class="btn btn-ghost" id="kit-btn" type="button">📦 Kit de difusión</button>
+        <button class="btn btn-ghost" id="logout-btn" type="button">Salir</button>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="stats" id="stats"></section>
+
+      <section class="panel">
+        <h2>Nuevo artículo</h2>
+        <label class="drop" id="drop">
+          <input type="file" id="files" multiple accept="image/*,video/*" hidden>
+          <strong>📷 Elegí o arrastrá fotos y videos</strong>
+          <small>Todo lo que elijas va al mismo artículo, en su propia carpeta de Drive. El nombre del archivo sirve de descripción.</small>
+        </label>
+        <div class="previews" id="previews"></div>
+        <label class="field">¿Qué es? <span style="font-weight:500;color:var(--muted)">(opcional: si lo dejás vacío usamos el nombre del archivo)</span>
+          <textarea id="new-text" rows="2" placeholder="Ej: Silla de escritorio Ikea Markus, 2 años de uso, un rayón en el apoyabrazos"></textarea>
+        </label>
+        <div class="row">
+          <label class="field">Estado<select id="new-cond"></select></label>
+          <label class="field">Entrega<select id="new-delivery"></select></label>
+        </div>
+        <button class="btn btn-primary" id="create-btn" type="button">✨ Subir y generar descripción</button>
+        <div class="progress" id="progress" hidden><div class="bar"><span></span></div><p></p></div>
+      </section>
+
+      <section class="panel">
+        <div class="list-head">
+          <h2>Artículos</h2>
+          <input class="search" type="search" id="list-q" placeholder="Buscar…" aria-label="Buscar artículos">
+          <select class="filter" id="list-status" aria-label="Filtrar por estado">
+            <option value="">Todos</option>
+            <option value="disponible">Disponibles</option>
+            <option value="reservado">Reservados</option>
+            <option value="vendido">Vendidos</option>
+          </select>
+        </div>
+        <div class="admin-list" id="list"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="sheet" id="edit-dialog" aria-label="Editar artículo"></dialog>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="mock/products.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/share.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
