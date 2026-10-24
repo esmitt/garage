@@ -181,36 +181,48 @@
 
   $('#create-btn').addEventListener('click', async () => {
     const files = pending.map(x => x.file);
-    const typed = $('#new-text').value.trim();
-    const nota = typed || namesToText(files);
-    if (!files.length && !nota) return G.toast('Agregá al menos una foto o contá qué es');
+    const typedTitle = $('#new-title').value.trim();
+    const typedDesc = $('#new-desc').value.trim();
+    const typedPrice = $('#new-price').value;
+    const cond = $('#new-cond').value;
+    const titulo = typedTitle || namesToText(files);
+    if (!files.length && !titulo && !typedDesc) return G.toast('Agregá al menos una foto o escribí qué es');
     const btn = $('#create-btn');
     btn.disabled = true;
     try {
       progress('Creando el artículo y su carpeta…', 0.03);
+      // Todo lo que escribió el usuario se guarda tal cual, antes de tocar la IA.
       let p = await Api.create({
-        titulo: (nota || 'Artículo nuevo').slice(0, 80),
-        nota,
-        condicion: $('#new-cond').value,
+        titulo: (titulo || 'Artículo nuevo').slice(0, 80),
+        descripcion: typedDesc,
+        nota: titulo,
+        condicion: cond,
         entrega: $('#new-delivery').value,
         estado: 'disponible',
-        precio: $('#new-cond').value === 'regalo' ? 0 : null
+        precio: cond === 'regalo' ? 0 : (typedPrice === '' ? null : Math.max(0, Math.round(Number(typedPrice))))
       });
-      if (files.length) p = await Api.uploadFiles(p.id, files, (label, f) => progress(label, 0.05 + f * 0.75)) || p;
-      progress('✨ La IA está mirando las fotos y escribiendo la descripción…', 0.88);
+      if (files.length) p = await Api.uploadFiles(p.id, files, (label, f) => progress(label, 0.05 + f * 0.8)) || p;
+
+      // La IA es opcional: máximo 10 s, solo completa lo que está vacío y sugiere el resto.
       let ai = null;
-      try {
-        const r = await Api.ai(p.id, nota);
-        p = r.product;
-        ai = r.ai;
-      } catch (err) {
-        G.toast('La IA no respondió (' + err.message + '). Completá la descripción a mano.', 5000);
+      if ($('#new-ai').checked) {
+        progress('✨ Pidiendo ayuda a la IA (máximo 10 segundos)…', 0.9);
+        try {
+          ai = await Api.suggest(p.id, { titulo, descripcion: typedDesc, condicion: cond });
+          const fields = { precioSugerido: ai.precioSugerido };
+          if (!typedDesc && ai.descripcion) fields.descripcion = ai.descripcion;
+          if (!typedTitle && ai.titulo) fields.titulo = ai.titulo;
+          p = await Api.update(p.id, fields);
+        } catch (err) {
+          ai = null;
+          G.toast('La IA ' + err.message + ': la omitimos. Tu texto quedó como lo escribiste.', 5000);
+        }
       }
-      progress('¡Listo! Revisá y guardá', 1);
+      progress('¡Listo!', 1);
       pending.forEach(x => URL.revokeObjectURL(x.url));
       pending = [];
       renderPending();
-      $('#new-text').value = '';
+      ['#new-title', '#new-desc', '#new-price'].forEach(id => { $(id).value = ''; });
       await refresh();
       openEdit(p, { fresh: true, ai });
     } catch (err) {
@@ -258,7 +270,7 @@
     dlg.innerHTML = `
       <form class="edit">
         <div class="sheet-head">
-          <h2>${opts.fresh ? '✨ Revisá lo que propuso la IA' : 'Editar artículo'}</h2>
+          <h2>${opts.fresh ? 'Artículo subido ✅ Revisalo' : 'Editar artículo'}</h2>
           <button type="button" class="icon-btn" data-close aria-label="Cerrar">✕</button>
         </div>
         <div class="sheet-body">
@@ -269,6 +281,10 @@
           <div class="progress" hidden><div class="bar"><span></span></div><p></p></div>
           <label class="field">Título<input name="titulo" maxlength="80" required value="${G.esc(p.titulo)}"></label>
           <label class="field">Descripción<textarea name="descripcion" rows="5">${G.esc(p.descripcion)}</textarea></label>
+          ${ai && ai.descripcion && ai.descripcion !== p.descripcion ? `
+            <div class="suggest">✨ Descripción sugerida por la IA: <button type="button" class="link" data-use-desc>usarla</button>
+              <small>${G.esc(ai.descripcion)}</small>
+            </div>` : ''}
           ${p.precioSugerido != null ? `
             <div class="suggest">💡 Precio sugerido: <b>${G.money.format(p.precioSugerido)}</b>
               <button type="button" class="link" data-use-suggest>usar este</button>
@@ -281,13 +297,13 @@
           </div>
           <div class="row">
             <label class="field">Venta<select name="estado">${G.options(G.STATUS, p.estado)}</select></label>
-            <label class="field">Pista para la IA<input name="nota" value="${G.esc(p.nota || '')}" placeholder="Marca, medidas, detalles…"></label>
+            <label class="field">Pista para la IA <span class="opt">(opcional)</span><input name="nota" value="${G.esc(p.nota || '')}" placeholder="Marca, medidas, detalles…"></label>
           </div>
         </div>
         <div class="sheet-foot">
           <button type="button" class="btn btn-ghost danger" data-a="delete">🗑 Eliminar</button>
           <span class="spacer"></span>
-          <button type="button" class="btn btn-ghost" data-a="ai">✨ Regenerar con IA</button>
+          <button type="button" class="btn btn-ghost" data-a="ai">✨ Sugerencias de la IA</button>
           <button type="button" class="btn btn-ghost" data-a="share">📣 Difundir</button>
           <button type="submit" class="btn btn-primary">Guardar</button>
         </div>
@@ -299,12 +315,14 @@
 
     const useBtn = $('[data-use-suggest]', dlg);
     if (useBtn) useBtn.addEventListener('click', () => { f.precio.value = p.precioSugerido; });
+    const useDesc = $('[data-use-desc]', dlg);
+    if (useDesc) useDesc.addEventListener('click', () => { f.descripcion.value = ai.descripcion; useDesc.closest('.suggest').remove(); });
 
     f.addEventListener('submit', async e => {
       e.preventDefault();
       busy(true);
       try {
-        const np = await Api.update(p.id, readForm(f));
+        const np = await Api.update(p.id, Object.assign(readForm(f), { precioSugerido: p.precioSugerido }));
         Object.assign(p, np);
         G.toast('Guardado ✅');
         dlg.close();
@@ -325,17 +343,17 @@
         try { await Api.remove(p.id); dlg.close(); G.toast('Eliminado'); refresh(); } catch (err) { G.toast('Error: ' + err.message); busy(false); }
       }
       if (b.dataset.a === 'ai') {
+        // No guarda ni pisa nada: solo ofrece sugerencias; lo escrito en el formulario se conserva.
         busy(true);
-        b.textContent = '✨ Pensando…';
+        b.textContent = '✨ Pensando (máx. 10 s)…';
+        const cur = readForm(f);
         try {
-          const fields = readForm(f);
-          await Api.update(p.id, fields);
-          const r = await Api.ai(p.id, [fields.nota, fields.titulo].filter(Boolean).join('. '));
-          reopen(r.product, { fresh: true, ai: r.ai });
+          const s = await Api.suggest(p.id, { titulo: cur.titulo, descripcion: cur.descripcion, condicion: cur.condicion });
+          openEdit(Object.assign({}, p, cur, { precioSugerido: s.precioSugerido }), { ai: s });
         } catch (err) {
-          G.toast('La IA no respondió: ' + err.message, 5000);
+          G.toast('La IA ' + err.message + '. No se cambió nada.', 4500);
           busy(false);
-          b.textContent = '✨ Regenerar con IA';
+          b.textContent = '✨ Sugerencias de la IA';
         }
       }
     });

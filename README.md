@@ -34,7 +34,7 @@ python -m http.server 5173
      | `ADMIN_USER` | el usuario que quieran |
      | `ADMIN_PASS` | una clave larga |
      | `GEMINI_API_KEY` | la key del paso 1 |
-     | `GEMINI_MODEL` | *(opcional)* por defecto `gemini-2.5-flash` |
+     | `GEMINI_MODEL` | *(opcional)* por defecto `gemini-3.8-flash` |
 4. Elegí la función **`setup`** y tocá **Ejecutar**. Autorizá los permisos (Google avisa "app no verificada": *Configuración avanzada → Ir a…*). Esto crea la hoja `Productos` y la carpeta **"Venta Garage (fotos)"** en tu Drive, compartida como "cualquiera con el enlace" para que se vean las fotos.
 5. **Implementar → Nueva implementación → Aplicación web**:
    - Ejecutar como: **Yo**

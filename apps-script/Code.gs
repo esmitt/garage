@@ -6,7 +6,7 @@
  *
  * Propiedades del script (Configuración del proyecto > Propiedades del script):
  *   ADMIN_USER, ADMIN_PASS, GEMINI_API_KEY   (obligatorias)
- *   GEMINI_MODEL (opcional, por defecto gemini-2.5-flash), TOKEN_SECRET y ROOT_FOLDER_ID (las crea setup())
+ *   GEMINI_MODEL (opcional, por defecto gemini-3.8-flash), TOKEN_SECRET y ROOT_FOLDER_ID (las crea setup())
  */
 
 var SHEET_NAME = 'Productos';
@@ -347,9 +347,13 @@ function imageData_(id) {
 
 // ---------------- IA (Gemini) ----------------
 
+// Solo SUGIERE: no escribe nada en la planilla. El navegador espera como máximo 10 s y, si
+// la IA tarda o falla, el artículo queda exactamente como lo escribió el usuario.
 function aiDescribe_(req) {
   var p = getRow_(req.id).p;
-  var hint = String(req.text || p.nota || '').trim();
+  var titulo = String(req.titulo || p.titulo || p.nota || '').trim();
+  var desc = String(req.descripcion || p.descripcion || '').trim();
+  var cond = ENUMS.condicion.indexOf(req.condicion) >= 0 ? req.condicion : p.condicion;
   var names = p.media.map(function (m) { return m.name; }).join(', ');
   var cover = p.media.filter(function (m) { return m.type === 'image'; })[0] || p.media[0];
   var blob = null;
@@ -359,35 +363,33 @@ function aiDescribe_(req) {
       blob = cover.type === 'image' ? file.getBlob() : file.getThumbnail();
     } catch (e) { blob = null; }
   }
-  var ai = gemini_(prompt_(hint, names, p.condicion), blob);
-
-  return withLock_(function () {
-    var r = getRow_(req.id), q = r.p;
-    if (ai.titulo) q.titulo = String(ai.titulo).slice(0, 80);
-    if (ai.descripcion) q.descripcion = String(ai.descripcion);
-    var sug = num_(ai.precioSugerido);
-    if (sug != null) q.precioSugerido = Math.round(sug);
-    if (q.precio == null && q.precioSugerido != null) q.precio = q.precioSugerido;
-    save_(r.row, q);
-    try { DriveApp.getFolderById(q.folderId).setName(folderName_(q)); } catch (e) { /* sin carpeta */ }
-    return { product: q, ai: ai };
-  });
+  var ai = gemini_(prompt_(titulo, desc, names, cond), blob);
+  var sug = num_(ai.precioSugerido);
+  return {
+    ai: {
+      titulo: String(ai.titulo || '').slice(0, 80),
+      descripcion: String(ai.descripcion || ''),
+      precioSugerido: sug == null ? null : Math.round(sug),
+      motivoPrecio: String(ai.motivoPrecio || '')
+    }
+  };
 }
 
-function prompt_(hint, names, condicion) {
+function prompt_(titulo, desc, names, condicion) {
   var cond = { nuevo: 'nuevo, sin uso', excelente: 'usado, en excelente estado', usado: 'usado', regalo: 'para regalar (gratis)' }[condicion] || condicion;
   return [
-    'Ayudás a una familia que se muda de Argentina a otro país y tiene que vender todo rápido en una venta de garage en Villa Urquiza (CABA).',
+    'Ayudás a una familia que hace una venta de garage en Villa Urquiza (CABA, Argentina) y quiere vender rápido.',
     'Mirá la foto (si hay) y estos datos del artículo:',
-    '- Lo que escribieron: ' + (hint || '(nada)'),
+    '- Título escrito por los dueños: ' + (titulo || '(nada)'),
+    '- Descripción escrita por los dueños: ' + (desc || '(nada)'),
     '- Nombres de los archivos: ' + (names || '(sin archivos)'),
     '- Estado indicado por los dueños: ' + cond,
     '',
     'Respondé SOLO con un JSON con esta forma:',
     '{"titulo": string, "descripcion": string, "precioSugerido": number, "motivoPrecio": string}',
-    '- titulo: corto y claro (máximo 60 caracteres), con marca y modelo si se ven o están escritos.',
-    '- descripcion: 2 a 4 oraciones en español rioplatense (voseo), cálidas y honestas. Qué es, qué se ve (material, color, tamaño aproximado, accesorios) y para qué sirve. No inventes datos que no se vean ni estén escritos; si algo es aproximado, aclaralo. Máximo un emoji.',
-    '- precioSugerido: número entero en pesos argentinos para vender RÁPIDO hoy en Buenos Aires. Partí del precio de un artículo similar usado en Mercado Libre y bajalo 20-30% porque es una venta urgente por mudanza. Redondeá a miles. Si es para regalar, 0.',
+    '- titulo: corto y claro (máximo 60 caracteres), con marca y modelo si se ven o están escritos. Si los dueños ya escribieron un buen título, conservalo.',
+    '- descripcion: 2 a 4 oraciones en español rioplatense (voseo), cálidas y honestas. Si los dueños escribieron una descripción, MEJORALA sin perder ningún dato suyo (medidas, defectos, marca, antigüedad). Si no, escribila a partir de lo que se ve: qué es, material, color, tamaño aproximado, accesorios y para qué sirve. No inventes datos que no se vean ni estén escritos; si algo es aproximado, aclaralo. Máximo un emoji.',
+    '- precioSugerido: número entero en pesos argentinos para vender RÁPIDO hoy en Buenos Aires. Partí del precio de un artículo similar usado en Mercado Libre y bajalo 20-30% porque se quiere vender rápido. Redondeá a miles. Si es para regalar, 0.',
     '- motivoPrecio: una frase corta que explique de dónde sale el precio.'
   ].join('\n');
 }
@@ -395,10 +397,11 @@ function prompt_(hint, names, condicion) {
 function gemini_(prompt, blob) {
   var key = cfg_('GEMINI_API_KEY');
   if (!key) throw new Error('Falta GEMINI_API_KEY en las propiedades del script');
-  var model = cfg_('GEMINI_MODEL', 'gemini-2.5-flash');
+  var model = cfg_('GEMINI_MODEL', 'gemini-3.8-flash');
   var parts = [{ text: prompt }];
   if (blob) parts.push({ inline_data: { mime_type: blob.getContentType() || 'image/jpeg', data: Utilities.base64Encode(blob.getBytes()) } });
-  var res = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
+  var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent';
+  var opts = {
     method: 'post',
     contentType: 'application/json',
     muteHttpExceptions: true,
@@ -407,7 +410,15 @@ function gemini_(prompt, blob) {
       contents: [{ role: 'user', parts: parts }],
       generationConfig: { responseMimeType: 'application/json', temperature: 0.5 }
     })
-  });
+  };
+  // 429/500/503 = saturado o error pasajero: se reintenta con espera creciente (1,5 y 3 s)
+  var res, waits = [1500, 3000];
+  for (var i = 0; ; i++) {
+    res = UrlFetchApp.fetch(url, opts);
+    var code = res.getResponseCode();
+    if (code === 200 || [429, 500, 502, 503, 504].indexOf(code) < 0 || i >= waits.length) break;
+    Utilities.sleep(waits[i]);
+  }
   if (res.getResponseCode() !== 200) throw new Error('Gemini respondió ' + res.getResponseCode() + ': ' + res.getContentText().slice(0, 300));
   var body = JSON.parse(res.getContentText());
   var cand = (body.candidates || [])[0];

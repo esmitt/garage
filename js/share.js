@@ -141,8 +141,19 @@ const Share = (() => {
     roundRect(x, M, y, PW, PH, 40);
     x.clip();
     if (img) {
-      const s = Math.max(PW / img.naturalWidth, PH / img.naturalHeight);
-      const iw = img.naturalWidth * s, ih = img.naturalHeight * s;
+      // fondo: la misma foto recortada y difuminada; encima, la foto completa
+      x.fillStyle = COL.bg2;
+      x.fillRect(M, y, PW, PH);
+      const cover = Math.max(PW / img.naturalWidth, PH / img.naturalHeight) * 1.15;
+      if ('filter' in x) {
+        x.filter = 'blur(34px)';
+        x.drawImage(img, M + (PW - img.naturalWidth * cover) / 2, y + (PH - img.naturalHeight * cover) / 2, img.naturalWidth * cover, img.naturalHeight * cover);
+        x.filter = 'none';
+      }
+      x.fillStyle = 'rgba(255,253,249,.18)';
+      x.fillRect(M, y, PW, PH);
+      const fit = Math.min(PW / img.naturalWidth, PH / img.naturalHeight);
+      const iw = img.naturalWidth * fit, ih = img.naturalHeight * fit;
       x.drawImage(img, M + (PW - iw) / 2, y + (PH - ih) / 2, iw, ih);
     } else {
       x.fillStyle = COL.bg2;

@@ -54,6 +54,11 @@
     return `<img src="${G.esc(src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=ph>📦</div>'">`;
   }
 
+  const bgVar = (m, w) => {
+    const src = m && Api.thumbUrl(m, w);
+    return src ? ` style="--img:url(&quot;${G.esc(src)}&quot;)"` : '';
+  };
+
   function card(p) {
     const m = (p.media || [])[0];
     const n = (p.media || []).length;
@@ -62,8 +67,8 @@
       : p.estado === 'reservado' ? '<span class="pill reservado corner">Reservado</span>' : '';
     return `
       <a class="card ${p.estado}" href="#item-${G.esc(p.id)}" data-id="${G.esc(p.id)}">
-        <div class="card-media">
-          ${mediaThumb(m, 600)}
+        <div class="card-media"${bgVar(m, 200)}>
+          ${mediaThumb(m, 700)}
           <span class="pill ${p.condicion}">${G.esc(G.COND[p.condicion] || '')}</span>
           ${n > 1 || hasVideo ? `<span class="count-badge">${hasVideo ? '▶ ' : ''}${n} ${n === 1 ? 'archivo' : 'fotos'}</span>` : ''}
           ${stamp}
@@ -101,6 +106,10 @@
     if (location.hash) history.replaceState(null, '', location.pathname + location.search);
   });
 
+  // Atributos del escenario: fondo difuminado para fotos (los videos van sobre negro)
+  const stageAttrs = m => (m && m.type !== 'video' && Api.thumbUrl(m, 200))
+    ? ` class="stage has-img"${bgVar(m, 200)}` : ' class="stage"';
+
   function stageHtml(m) {
     if (!m) return '<div class="ph">📦</div>';
     if (m.type === 'video') {
@@ -134,7 +143,7 @@
       </div>
       <div class="item">
         <div class="gallery">
-          <div class="stage">${stageHtml(media[0])}</div>
+          <div${stageAttrs(media[0])}>${stageHtml(media[0])}</div>
           ${media.length > 1 ? `<div class="thumbs">${media.map((m, i) => `
             <button class="thumb${i ? '' : ' on'}" data-i="${i}" aria-label="Ver ${i + 1}">
               ${Api.thumbUrl(m, 200) ? `<img src="${G.esc(Api.thumbUrl(m, 200))}" alt="" referrerpolicy="no-referrer">` : '<div class="ph" style="font-size:22px">🎬</div>'}
@@ -156,7 +165,13 @@
       </div>`;
 
     dlg.querySelectorAll('.thumb').forEach(b => b.addEventListener('click', () => {
-      dlg.querySelector('.stage').innerHTML = stageHtml(media[+b.dataset.i]);
+      const m = media[+b.dataset.i];
+      const st = dlg.querySelector('.stage');
+      const holder = document.createElement('div');
+      holder.innerHTML = `<div${stageAttrs(m)}></div>`;
+      st.className = holder.firstChild.className;
+      st.setAttribute('style', holder.firstChild.getAttribute('style') || '');
+      st.innerHTML = stageHtml(m);
       dlg.querySelectorAll('.thumb').forEach(x => x.classList.toggle('on', x === b));
     }));
     dlg.querySelector('[data-share]').addEventListener('click', () => Share.open(p));

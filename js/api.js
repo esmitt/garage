@@ -81,18 +81,17 @@ const Api = (() => {
     return JSON.parse(JSON.stringify(p));
   }
 
-  function mockAi(p, text) {
-    const base = (text || p.nota || p.titulo || 'Artículo').replace(/\s+/g, ' ').trim();
+  function mockAi(h) {
+    const base = (h.titulo || 'Artículo').replace(/\s+/g, ' ').trim();
     const titulo = (base.charAt(0).toUpperCase() + base.slice(1)).slice(0, 60);
     const ranges = { nuevo: [60, 250], excelente: [40, 180], usado: [15, 90], regalo: [0, 0] };
-    const [lo, hi] = ranges[p.condicion] || ranges.usado;
-    const precioSugerido = Math.round((lo + Math.random() * (hi - lo))) * 1000;
-    const estado = { nuevo: 'nuevo, sin uso', excelente: 'en excelente estado', usado: 'usado y funcionando bien', regalo: 'para regalar' }[p.condicion];
+    const [lo, hi] = ranges[h.condicion] || ranges.usado;
+    const estado = { nuevo: 'nuevo, sin uso', excelente: 'en excelente estado', usado: 'usado y funcionando bien', regalo: 'para regalar' }[h.condicion];
     return {
       titulo,
-      descripcion: `${titulo}, ${estado}. Se ve bien cuidado y listo para usar en su nuevo hogar. (Texto de ejemplo: con el backend real lo escribe Gemini mirando la foto.)`,
-      precioSugerido,
-      motivoPrecio: 'Ejemplo: precio de usado similar en Mercado Libre, con descuento por venta urgente.'
+      descripcion: (h.descripcion ? h.descripcion + ' ' : '') + `${titulo}, ${estado}. (Texto de ejemplo del modo demo.)`,
+      precioSugerido: Math.round(lo + Math.random() * (hi - lo)) * 1000,
+      motivoPrecio: 'Ejemplo del modo demo.'
     };
   }
 
@@ -204,20 +203,18 @@ const Api = (() => {
     return (await post('removeMedia', { id, fileId })).product;
   }
 
-  async function ai(id, text) {
-    if (MOCK) {
-      await sleep(1200);
-      const cur = mockLoad().find(p => p.id === id);
-      const s = mockAi(cur, text);
-      const product = mockEdit(id, p => {
-        p.titulo = s.titulo;
-        p.descripcion = s.descripcion;
-        p.precioSugerido = s.precioSugerido;
-        if (p.precio == null) p.precio = s.precioSugerido;
-      });
-      return { product, ai: s };
+  // La IA es opcional: nunca espera más de AI_MS y NUNCA modifica el artículo (solo devuelve una sugerencia).
+  const AI_MS = 10000;
+  async function suggest(id, hint) {
+    if (MOCK) { await sleep(900); return mockAi(hint); }
+    let timer;
+    const limit = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('tardó más de 10 segundos')), AI_MS); });
+    try {
+      const r = await Promise.race([post('aiDescribe', Object.assign({ id }, hint), 1), limit]);
+      return r.ai;
+    } finally {
+      clearTimeout(timer);
     }
-    return post('aiDescribe', { id, text });
   }
 
   const jpgName = n => n.replace(/\.[^.]+$/, '') + '.jpg';
@@ -264,5 +261,5 @@ const Api = (() => {
     return product;
   }
 
-  return { MOCK, isLogged, logout, login, list, create, update, remove, removeMedia, ai, uploadFiles, thumbUrl, fullUrl, videoEmbed, coverImage, imageDataUrl, loadImg };
+  return { MOCK, isLogged, logout, login, list, create, update, remove, removeMedia, suggest, uploadFiles, thumbUrl, fullUrl, videoEmbed, coverImage, imageDataUrl, loadImg };
 })();

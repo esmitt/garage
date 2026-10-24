@@ -47,14 +47,21 @@
           <small>Todo lo que elijas va al mismo artículo, en su propia carpeta de Drive. El nombre del archivo sirve de descripción.</small>
         </label>
         <div class="previews" id="previews"></div>
-        <label class="field">¿Qué es? <span style="font-weight:500;color:var(--muted)">(opcional: si lo dejás vacío usamos el nombre del archivo)</span>
-          <textarea id="new-text" rows="2" placeholder="Ej: Silla de escritorio Ikea Markus, 2 años de uso, un rayón en el apoyabrazos"></textarea>
+        <label class="field">Título <span class="opt">(si lo dejás vacío, usamos el nombre del archivo)</span>
+          <input id="new-title" maxlength="80" placeholder="Ej: Silla de escritorio Ikea Markus">
         </label>
-        <div class="row">
+        <label class="field">Descripción <span class="opt">(opcional)</span>
+          <textarea id="new-desc" rows="3" placeholder="Ej: 2 años de uso, un rayón en el apoyabrazos, ruedas nuevas"></textarea>
+        </label>
+        <div class="row three">
+          <label class="field">Precio (ARS) <span class="opt">(vacío = lo ponés después)</span><input id="new-price" type="number" min="0" step="500" inputmode="numeric"></label>
           <label class="field">Estado<select id="new-cond"></select></label>
           <label class="field">Entrega<select id="new-delivery"></select></label>
         </div>
-        <button class="btn btn-primary" id="create-btn" type="button">✨ Subir y generar descripción</button>
+        <label class="toggle ai-toggle"><input type="checkbox" id="new-ai" checked>
+          <span>✨ Pedir ayuda a la IA <span class="opt">(mejora la descripción y sugiere un precio. Si tarda más de 10 segundos se omite y queda tu texto)</span></span>
+        </label>
+        <button class="btn btn-primary" id="create-btn" type="button">Subir artículo</button>
         <div class="progress" id="progress" hidden><div class="bar"><span></span></div><p></p></div>
       </section>
 

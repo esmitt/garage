@@ -127,8 +127,13 @@ a.chip:hover { box-shadow: inset 0 0 0 1.5px var(--accent); }
   overflow: hidden; box-shadow: var(--shadow); transition: transform .2s ease, box-shadow .2s ease;
 }
 .card:hover { transform: translateY(-4px) rotate(-.3deg); box-shadow: var(--shadow-lg); }
-.card-media { position: relative; aspect-ratio: 1; background: var(--bg-2); overflow: hidden; }
-.card-media img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
+.card-media { position: relative; aspect-ratio: 4 / 5; background: var(--bg-2); overflow: hidden; }
+/* La foto se ve completa (vertical u horizontal); los costados se rellenan con la misma foto difuminada. */
+.card-media::before, .stage.has-img::before {
+  content: ''; position: absolute; inset: -24px; background: var(--img) center / cover;
+  filter: blur(22px) saturate(1.1); opacity: .6;
+}
+.card-media img { position: relative; width: 100%; height: 100%; object-fit: contain; transition: transform .4s ease; }
 .card:hover .card-media img { transform: scale(1.04); }
 .card-media .pill { position: absolute; top: 12px; left: 12px; box-shadow: 0 2px 6px rgba(0, 0, 0, .08); }
 .card-media .pill.corner { left: auto; right: 12px; }
@@ -174,8 +179,8 @@ dialog.sheet[open] { animation: pop .22s ease; }
 .spacer { flex: 1; }
 
 .item { display: grid; grid-template-columns: 1.15fr 1fr; gap: 28px; padding: 14px 22px 26px; }
-.gallery .stage { aspect-ratio: 1; border-radius: 18px; overflow: hidden; background: var(--bg-2); }
-.gallery .stage img, .gallery .stage video, .gallery .stage iframe { width: 100%; height: 100%; object-fit: cover; border: 0; display: block; }
+.gallery .stage { position: relative; aspect-ratio: 4 / 5; max-height: 74dvh; width: 100%; border-radius: 18px; overflow: hidden; background: var(--bg-2); }
+.gallery .stage img, .gallery .stage video, .gallery .stage iframe { position: relative; width: 100%; height: 100%; object-fit: contain; border: 0; display: block; }
 .gallery .stage video, .gallery .stage iframe { object-fit: contain; background: #000; }
 .thumbs { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 4px; }
 .thumb { flex: none; width: 64px; height: 64px; border-radius: 12px; overflow: hidden; border: 0; padding: 0; cursor: pointer; opacity: .6; background: var(--bg-2); position: relative; }
@@ -252,6 +257,9 @@ dialog.sheet[open] { animation: pop .22s ease; }
 .prev .name { position: absolute; inset: auto 0 0; font-size: 10px; background: rgba(59, 42, 32, .7); color: #fff; padding: 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: end; }
 .row.three { grid-template-columns: repeat(3, 1fr); }
+.opt { font-weight: 500; color: var(--muted); font-size: 13px; }
+.ai-toggle { align-items: flex-start; margin: 2px 0 16px; font-weight: 700; font-size: 14px; }
+.ai-toggle input { margin-top: 3px; flex: none; }
 .progress { margin-top: 14px; }
 .bar { height: 10px; border-radius: 999px; background: var(--bg-2); overflow: hidden; }
 .bar span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--gold)); transition: width .3s ease; }
@@ -274,7 +282,7 @@ dialog.sheet[open] { animation: pop .22s ease; }
 .status-seg button.on[data-status="vendido"] { background: var(--sold); color: #fff; }
 .media-edit { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
 .mtile { position: relative; width: 96px; height: 96px; border-radius: 14px; overflow: hidden; background: var(--bg-2); }
-.mtile img, .mtile video { width: 100%; height: 100%; object-fit: cover; }
+.mtile img, .mtile video { width: 100%; height: 100%; object-fit: contain; background: var(--bg-2); }
 .mtile.cover { box-shadow: 0 0 0 3px var(--accent); }
 .mtile .tools { position: absolute; inset: auto 0 0; display: flex; justify-content: space-between; padding: 4px; }
 .mtile .tools button { border: 0; width: 26px; height: 26px; border-radius: 50%; background: rgba(59, 42, 32, .75); color: #fff; cursor: pointer; font-size: 13px; }
